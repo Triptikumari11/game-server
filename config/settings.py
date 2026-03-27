@@ -5,14 +5,13 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv("SECRET_KEY", "change-me-in-production")
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() == "true"
 
-DEBUG = os.getenv("DEBUG", "True").lower() == "true"
-
-ALLOWED_HOSTS = [host for host in os.getenv("ALLOWED_HOSTS", "*").split(",") if host]
+ALLOWED_HOSTS = [host for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "*").split(",") if host]
 
 CSRF_TRUSTED_ORIGINS = [
-    origin for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if origin
+    origin for origin in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if origin
 ]
 
 INSTALLED_APPS = [

@@ -1,0 +1,39 @@
+steps:
+  # Build the image with Cloud Native Buildpacks (no Dockerfile required)
+  - id: "build-pack"
+    name: "gcr.io/buildpacks/pack"
+    args:
+      - "build"
+      - "gcr.io/$PROJECT_ID/game-server:$SHORT_SHA"
+      - "--builder"
+      - "gcr.io/buildpacks/builder:v1"
+      - "--path"
+      - "."
+
+  # Deploy the built image to Cloud Run and inject secret from Secret Manager
+  - id: "deploy-cloud-run"
+    name: "gcr.io/cloud-builders/gcloud"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        set -e
+        echo "Deploying to Cloud Run (service: game-server, region: europe-west1)"
+        gcloud run deploy game-server \
+          --image gcr.io/$PROJECT_ID/game-server:$SHORT_SHA \
+          --region europe-west1 \
+          --platform managed \
+          --allow-unauthenticated \
+          --set-secrets DJANGO_SECRET_KEY=projects/$PROJECT_ID/secrets/DJANGO_SECRET_KEY:latest
+
+images:
+  - "gcr.io/$PROJECT_ID/game-server:$SHORT_SHA"
+
+timeout: "1200s"
+
+# Notes:
+# - Uses Buildpacks to build the Python/Django app (no Dockerfile).
+# - Injects Secret Manager secret `DJANGO_SECRET_KEY` into the Cloud Run service
+#   as environment variable `DJANGO_SECRET_KEY` using the fully-qualified secret
+#   resource path. Ensure the secret exists and the Cloud Build service account
+#   has the `roles/secretmanager.secretAccessor` permission.
